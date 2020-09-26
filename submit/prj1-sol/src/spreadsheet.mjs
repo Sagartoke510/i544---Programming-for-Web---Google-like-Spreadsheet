@@ -46,18 +46,12 @@ export default class Spreadsheet {
     let val = this.evalAstForm(astForm, baseCellId);
     this.cells[baseCellId].value = val;
 
-    // this.cells[baseCellId].dependents = expr.split(/\*|\+|\-|\\|%/);
+    
     this.cells[baseCellId].dependents.forEach((e) => {
       this.cells[e].value = this.evalAstForm(this.cells[e].astForm);
       updates[e] = this.cells[e].value;
     });
-    /*for(const c in this.cells){
-      if(this.cells[c].dependents.find(e=>e.trim()===baseCellId)){
-        this.cells[c].value = this.evalAstForm(this.cells[c].astForm);
-        updates[c] = this.cells[c].value;
-      }
-    }
-    */
+    
     //console.log(inspect(astForm, false, Infinity));
     updates[baseCellId] = val;
     return updates;
