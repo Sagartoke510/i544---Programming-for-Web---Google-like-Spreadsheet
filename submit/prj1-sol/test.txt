@@ -1,0 +1,47 @@
+
+> prj1-sol@1.0.0 test /home/stoke1/projects/i544/submit/prj1-sol
+> mocha test/
+
+
+
+  parse
+    ✓ must parse simple arith expr correctly
+    ✓ must parse simple prec expr correctly
+    ✓ must parse assoc expr correctly
+    ✓ must parse paren-assoc expr correctly
+    ✓ must parse unary - expr correctly
+    ✓ must parse function expr correctly
+    ✓ must parse nested function expr correctly
+    ✓ must parse cell ref correctly
+    ✓ must translate cell ref correctly
+    ✓ must translate cell ref without translating abs
+    ✓ must parse and translate complex formula
+
+  scan
+    ✓ an integer should scan correctly
+    ✓ a number with decimal point should scan correctly
+    ✓ a number with exponent should scan correctly
+    ✓ a number with negative exponent should scan correctly
+    ✓ a rel/rel ref should scan correctly
+    ✓ a rel/rel ref relative to a base should scan correctly
+    ✓ a rel/abs ref relative to a base should scan correctly
+    ✓ an abs/abs ref relative to a base should scan correctly
+    ✓ multiple tokens should scan correctly
+
+  spreadsheet
+    ✓ must evaluate a single number formula
+    ✓ must evaluate a purely numeric formula
+    ✓ must evaluate a formula with a single reference
+    ✓ must evaluate a reference formula
+    ✓ must evaluate an undefined cell as 0
+    ✓ must cascade an update
+    ✓ must evaluate a multi-level formula
+    ✓ must cascade an update through multiple levels
+    ✓ must detect a syntax error
+    ✓ must detect a direct circular reference
+    ✓ must detect an indirect circular reference
+    ✓ must recover from an error
+
+
+  32 passing (28ms)
+
