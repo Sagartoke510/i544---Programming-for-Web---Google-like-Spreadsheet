@@ -27,16 +27,27 @@ export default class PersistentSpreadsheet {
   static async make(dbUrl, spreadsheetName) {
     try {
       //@TODO set up database info, including reading data
+      const client = await mongo.connect(dbUrl, MONGO_CONNECT_OPTIONS);
+      const db = client.db();
+      const spreadsheetTable = db.collection(spreadsheetName);
+      const data = await spreadsheetTable.find({});
+      const spreadsheetTableData = await data.toArray();
+      return new PersistentSpreadsheet(/* @TODO params */{client, spreadsheetTable, spreadsheetTableData});
     }
     catch (err) {
       const msg = `cannot connect to URL "${dbUrl}": ${err}`;
       throw new AppError('DB', msg);
     }
-    return new PersistentSpreadsheet(/* @TODO params */);
+    
   }
 
-  constructor(/* @TODO params */) {
+  constructor(/* @TODO params */props) {
     //@TODO
+    Object.assign(this, props);
+    this.memSpreadsheet = new MemSpreadsheet();
+    for(const a of this.spreadsheetTableData){
+      this.memSpreadsheet.eval(a._id, a[a._id]);
+    }
   }
 
   /** Release all resources held by persistent spreadsheet.
@@ -44,6 +55,12 @@ export default class PersistentSpreadsheet {
    */
   async close() {
     //@TODO
+    try {
+      await this.client.close();
+    }
+    catch (err) {
+      throw new AppError('DB', err.toString());
+    }
   }
 
   /** Set cell with id baseCellId to result of evaluating string
@@ -52,9 +69,19 @@ export default class PersistentSpreadsheet {
    *  of all dependent cells to their updated values.
    */
   async eval(baseCellId, formula) {
-    const results = /* @TODO delegate to in-memory spreadsheet */ {}; 
+    const results = /* @TODO delegate to in-memory spreadsheet */this.memSpreadsheet.eval(baseCellId,formula); 
     try {
       //@TODO
+      for(const [key,value] of Object.entries(results)){
+          const forumlaReturned = this.memSpreadsheet._cells[key].formula;
+          const idfind = await this.spreadsheetTable.find({"_id":baseCellId});
+          const idReturned = await idfind.toArray();
+          const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
+          if(idReturned.length !== 1)
+            await this.spreadsheetTable.insertOne(cell);
+          else
+            await this.update(cell);
+      }
     }
     catch (err) {
       //@TODO undo mem-spreadsheet operation
@@ -64,23 +91,40 @@ export default class PersistentSpreadsheet {
     return results;
   }
 
+  async fromDbSpreadsheet(baseCellId, formula) {
+    const spreadsheetTableDb = Object.assign({}, {[baseCellId]:formula});
+    spreadsheetTableDb._id = baseCellId;
+    return spreadsheetTableDb;
+  }
+
+  async update(cell){
+    let set = Object.assign({}, cell);
+    delete set._id;
+    var id = {_id: cell._id};
+    set = {$set: set};
+    const ret = await this.spreadsheetTable.updateOne(id,set);
+    return ret;
+  }
   /** return object containing formula and value for cell cellId 
    *  return { value: 0, formula: '' } for an empty cell.
    */
   async query(cellId) {
-    return /* @TODO delegate to in-memory spreadsheet */ {}; 
+    return /* @TODO delegate to in-memory spreadsheet */this.memSpreadsheet.query(cellId); 
   }
 
   /** Clear contents of this spreadsheet */
   async clear() {
     try {
       //@TODO
+      await this.spreadsheetTable.deleteMany({});
+
     }
     catch (err) {
       const msg = `cannot drop collection ${this.spreadsheetName}: ${err}`;
       throw new AppError('DB', msg);
     }
     /* @TODO delegate to in-memory spreadsheet */
+     this.memSpreadsheet.clear();
   }
 
   /** Delete all info for cellId from this spreadsheet. Return an
@@ -89,12 +133,14 @@ export default class PersistentSpreadsheet {
    */
   async delete(cellId) {
     let results;
-    results = /* @TODO delegate to in-memory spreadsheet */ {}; 
+    results = /* @TODO delegate to in-memory spreadsheet */ this.memSpreadsheet.delete(cellId); 
     try {
       //@TODO
+      await this.spreadsheetTable.deleteOne({"_id": cellId});
     }
     catch (err) {
       //@TODO undo mem-spreadsheet operation
+      this.memSpreadsheet.undo();
       const msg = `cannot delete ${cellId}: ${err}`;
       throw new AppError('DB', msg);
     }
@@ -107,19 +153,36 @@ export default class PersistentSpreadsheet {
    *  an empty cell is equivalent to deleting the destination cell.
    */
   async copy(destCellId, srcCellId) {
-    const srcFormula = /* @TODO get formula by querying mem-spreadsheet */ '';
+    let srcFormula;
+    if(this.memSpreadsheet._cells[srcCellId])
+      srcFormula = this.memSpreadsheet._cells[srcCellId].formula;
+    else
+      srcFormula = '';  
+    
+   // const srcFormula = /* @TODO get formula by querying mem-spreadsheet */ '';
     if (!srcFormula) {
       return await this.delete(destCellId);
     }
     else {
-      const results = /* @TODO delegate to in-memory spreadsheet */ {}; 
+      const results = /* @TODO delegate to in-memory spreadsheet */ this.memSpreadsheet.copy(destCellId,srcCellId); 
       try {
-	//@TODO
+          //@TODO
+        for(const [key,value] of Object.entries(results)){
+          const forumlaReturned = this.memSpreadsheet._cells[key].formula;
+          const idfind = await this.spreadsheetTable.find({"_id":baseCellId});
+          const idReturned = await idfind.toArray();
+          const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
+          if(idReturned.length !== 1)
+            await this.spreadsheetTable.insertOne(cell);
+          else
+            await this.update(cell);
+        }
       }
       catch (err) {
-	//@TODO undo mem-spreadsheet operation
-	const msg = `cannot update "${destCellId}: ${err}`;
-	throw new AppError('DB', msg);
+        //@TODO undo mem-spreadsheet operation
+        this.memSpreadsheet.undo();
+    	  const msg = `cannot update "${destCellId}: ${err}`;
+	      throw new AppError('DB', msg);
       }
       return results;
     }
@@ -148,7 +211,7 @@ export default class PersistentSpreadsheet {
    *  sort.
    */
   async dump() {
-    return /* @TODO delegate to in-memory spreadsheet */ []; 
+    return /* @TODO delegate to in-memory spreadsheet */new MemSpreadsheet().dump(); 
   }
 
 }

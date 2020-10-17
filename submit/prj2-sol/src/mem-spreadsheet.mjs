@@ -48,13 +48,15 @@ export default class MemSpreadsheet {
    */
   query(cellId) {
     //@TODO
-    return { };
+    return !this._cells[cellId] ? {value: 0, formula: '' } : {value: this._cells[cellId].value, formula: this._cells[cellId].formula};
+
   }
 
   /** Clear contents of this spreadsheet. No undo information recorded. */
   clear() {
     this._undos = {};
     //@TODO
+    this._cells = {};
   }
 
   /** Delete all info for cellId from this spreadsheet. Return an
@@ -65,6 +67,8 @@ export default class MemSpreadsheet {
     this._undos = {};
     const results = {};
     //@TODO
+
+    this._cells[cellId]
     return results;
   }
 
