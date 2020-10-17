@@ -65,11 +65,13 @@ export default class MemSpreadsheet {
    */
   delete(cellId) {
     this._undos = {};
-    const results = {};
-    //@TODO
+    let results = {};
+    const res = [];
 
-    this._cells[cellId];
-    return results;
+    //@TODO
+   return results;
+
+  
   }
 
   /** copy formula from srcCellId to destCellId, adjusting any
