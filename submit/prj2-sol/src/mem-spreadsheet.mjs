@@ -68,7 +68,7 @@ export default class MemSpreadsheet {
     const results = {};
     //@TODO
 
-    this._cells[cellId]
+    this._cells[cellId];
     return results;
   }
 
@@ -79,8 +79,15 @@ export default class MemSpreadsheet {
    */
   copy(destCellId, srcCellId) {
     this._undos = {};
-    const results = {};
+    let results;
     //@TODO
+
+    const srcAst = this._cells[srcCellId].ast;
+    const destFormula = srcAst ? srcAst.toString(destCellId) : '';
+    if(!destFormula)
+      results = this.delete(destCellId);
+    else
+      results = this.eval(destCellId, destFormula);  
     return results;
   }
 

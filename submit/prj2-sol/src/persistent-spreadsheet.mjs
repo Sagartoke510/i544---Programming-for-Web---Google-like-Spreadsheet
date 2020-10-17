@@ -76,7 +76,7 @@ export default class PersistentSpreadsheet {
           const forumlaReturned = this.memSpreadsheet._cells[key].formula;
           const idfind = await this.spreadsheetTable.find({"_id":baseCellId});
           const idReturned = await idfind.toArray();
-          const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
+          const cell = await this.fromDbSpreadsheet(key,forumlaReturned);
           if(idReturned.length !== 1)
             await this.spreadsheetTable.insertOne(cell);
           else
@@ -167,11 +167,12 @@ export default class PersistentSpreadsheet {
       const results = /* @TODO delegate to in-memory spreadsheet */ this.memSpreadsheet.copy(destCellId,srcCellId); 
       try {
           //@TODO
+          //await this.updateDB(results);
         for(const [key,value] of Object.entries(results)){
           const forumlaReturned = this.memSpreadsheet._cells[key].formula;
-          const idfind = await this.spreadsheetTable.find({"_id":baseCellId});
+          const idfind = await this.spreadsheetTable.find({"_id":key});
           const idReturned = await idfind.toArray();
-          const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
+          const cell = await this.fromDbSpreadsheet(key,forumlaReturned);
           if(idReturned.length !== 1)
             await this.spreadsheetTable.insertOne(cell);
           else
@@ -211,7 +212,20 @@ export default class PersistentSpreadsheet {
    *  sort.
    */
   async dump() {
-    return /* @TODO delegate to in-memory spreadsheet */new MemSpreadsheet().dump(); 
+    return /* @TODO delegate to in-memory spreadsheet */this.memSpreadsheet.dump(); 
+  }
+
+  async updateDB(results){
+    for(const [key,value] of Object.entries(results)){
+      const forumlaReturned = this.memSpreadsheet._cells[key].formula;
+      const idfind = await this.spreadsheetTable.find({"_id":key});
+      const idReturned = await idfind.toArray();
+      const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
+      if(idReturned.length !== 1)
+        await this.spreadsheetTable.insertOne(cell);
+      else
+        await this.update(cell);
+    }
   }
 
 }
