@@ -94,7 +94,7 @@ export default class MemSpreadsheet {
     this._undos = {};
     let results = {};
     let destFormula;
-    let srcAst
+    let srcAst;
     //@TODO
 
     if(!this._cells[srcCellId])
@@ -144,7 +144,8 @@ export default class MemSpreadsheet {
     let resArray =[]; 
     let topoArray = []; 
     let visit = []; //to track visited nodes
-    sortedPrereqs = Object.keys(prereqs).sort().reduce((res,key)=> (res[key]=prereqs[key],res), {});
+
+    sortedPrereqs = Object.keys(prereqs).sort().reduce((res,key)=> (res[key]=prereqs[key],res), {});//get the sorted prereq
 
     for(const [key,value] of Object.entries(sortedPrereqs)){      
       if(!visit.includes(key)){
@@ -159,7 +160,7 @@ export default class MemSpreadsheet {
     
   }
 
-  /** method to do topological sort recursively*/ 
+  /** method to do topological sort recursively until depth is 0 then push into the resArray*/ 
   topoSort(value, sortedPrereqs, key, resArray, topArr, visit){
     if(value.length>0){
       value.forEach(v=> {
