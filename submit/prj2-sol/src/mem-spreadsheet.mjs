@@ -66,9 +66,20 @@ export default class MemSpreadsheet {
   delete(cellId) {
     this._undos = {};
     let results = {};
-    const res = [];
+    //TODO
+    let cell;
+    let dependentRes=[];
 
-    //@TODO
+    cell = this._updateCell(cellId, cell => cell.ast = this._cells[cellId].ast);
+    delete this._cells[cellId];
+    for(let key of cell.dependents){
+       dependentRes.push(this.eval(key, this._cells[key].formula));
+    }
+    
+    for(let value of dependentRes){
+      Object.assign(results,value);
+    }
+  
    return results;
 
   
@@ -81,15 +92,26 @@ export default class MemSpreadsheet {
    */
   copy(destCellId, srcCellId) {
     this._undos = {};
-    let results;
+    let results = {};
+    let destFormula;
+    let srcAst
     //@TODO
 
-    const srcAst = this._cells[srcCellId].ast;
-    const destFormula = srcAst ? srcAst.toString(destCellId) : '';
+    if(!this._cells[srcCellId])
+      srcAst = '';
+    else
+      srcAst = this._cells[srcCellId].ast;  
+
+    if(!srcAst)
+      destFormula = '';
+    else 
+      destFormula = srcAst.toString(destCellId);
+
     if(!destFormula)
       results = this.delete(destCellId);
     else
       results = this.eval(destCellId, destFormula);  
+
     return results;
   }
 
@@ -118,7 +140,40 @@ export default class MemSpreadsheet {
   dump() {
     const prereqs = this._makePrereqs();
     //@TODO
-    return [];
+    let sortedPrereqs={};   
+    let resArray =[]; 
+    let topoArray = []; 
+    let visit = []; //to track visited nodes
+    sortedPrereqs = Object.keys(prereqs).sort().reduce((res,key)=> (res[key]=prereqs[key],res), {});
+
+    for(const [key,value] of Object.entries(sortedPrereqs)){      
+      if(!visit.includes(key)){
+        this.topoSort(value,sortedPrereqs,key, resArray,topoArray,visit)      
+        if(!visit.includes(key)){
+          topoArray.push([key, this._cells[key].formula]);
+        visit.push(key);}
+      }
+    }
+    resArray = resArray.concat(topoArray);
+    return resArray;
+    
+  }
+
+  /** method to do topological sort recursively*/ 
+  topoSort(value, sortedPrereqs, key, resArray, topArr, visit){
+    if(value.length>0){
+      value.forEach(v=> {
+        if(!visit.includes(v)){
+          this.topoSort(sortedPrereqs[v], sortedPrereqs,v, resArray,topArr,visit);
+          if(!visit.includes(v)) {topArr.push([v,this._cells[v].formula]);
+          visit.push(v);}
+        }
+        }); 
+    }else{
+      //push when depth is 0
+      resArray.push([key, this._cells[key].formula]);
+      visit.push(key);
+    }
   }
 
   /** undo all changes since last operation */

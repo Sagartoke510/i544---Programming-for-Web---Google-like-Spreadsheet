@@ -41,9 +41,9 @@ export default class PersistentSpreadsheet {
     
   }
 
-  constructor(/* @TODO params */props) {
+  constructor(/* @TODO params */property) {
     //@TODO
-    Object.assign(this, props);
+    Object.assign(this, property);
     this.memSpreadsheet = new MemSpreadsheet();
     for(const a of this.spreadsheetTableData){
       this.memSpreadsheet.eval(a._id, a[a._id]);
@@ -71,7 +71,7 @@ export default class PersistentSpreadsheet {
   async eval(baseCellId, formula) {
     const results = /* @TODO delegate to in-memory spreadsheet */this.memSpreadsheet.eval(baseCellId,formula); 
     try {
-      //@TODO
+      //@TODO update the baseCellId and formula in db
       for(const [key,value] of Object.entries(results)){
           const forumlaReturned = this.memSpreadsheet._cells[key].formula;
           const idfind = await this.spreadsheetTable.find({"_id":baseCellId});
@@ -91,12 +91,13 @@ export default class PersistentSpreadsheet {
     return results;
   }
 
+  /** return spreadsheetTableDb after assigning baseCellID and formula*/ 
   async fromDbSpreadsheet(baseCellId, formula) {
     const spreadsheetTableDb = Object.assign({}, {[baseCellId]:formula});
     spreadsheetTableDb._id = baseCellId;
     return spreadsheetTableDb;
   }
-
+  /** Update the cells present already in the db based on id*/
   async update(cell){
     let set = Object.assign({}, cell);
     delete set._id;
@@ -166,8 +167,8 @@ export default class PersistentSpreadsheet {
     else {
       const results = /* @TODO delegate to in-memory spreadsheet */ this.memSpreadsheet.copy(destCellId,srcCellId); 
       try {
-          //@TODO
-          //await this.updateDB(results);
+          //@TODO update values in db
+         
         for(const [key,value] of Object.entries(results)){
           const forumlaReturned = this.memSpreadsheet._cells[key].formula;
           const idfind = await this.spreadsheetTable.find({"_id":key});
@@ -215,18 +216,6 @@ export default class PersistentSpreadsheet {
     return /* @TODO delegate to in-memory spreadsheet */this.memSpreadsheet.dump(); 
   }
 
-  async updateDB(results){
-    for(const [key,value] of Object.entries(results)){
-      const forumlaReturned = this.memSpreadsheet._cells[key].formula;
-      const idfind = await this.spreadsheetTable.find({"_id":key});
-      const idReturned = await idfind.toArray();
-      const cell = await this.fromDbSpreadsheet(key,forumlaReturned || value);
-      if(idReturned.length !== 1)
-        await this.spreadsheetTable.insertOne(cell);
-      else
-        await this.update(cell);
-    }
-  }
 
 }
 
