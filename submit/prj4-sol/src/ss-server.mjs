@@ -50,6 +50,7 @@ function setupRoutes(app) {
   app.use(bodyParser.json());
   app.get(`/`, doGet(app));
   app.post(`/`,bodyParser.urlencoded({extended: false}), doPost(app));
+  app.get(`/${BASE}/${STORE}/:SS_NAME`, doRead(app) );
   //must be last
   app.use(do404(app));
   app.use(doErrors(app));
@@ -72,20 +73,26 @@ function doGet(app) {
 function doPost(app) {
   return async function (req, res) {
       
-  
-    let errors = validateField('ssName',req.body.ssName,{});
-    if(!errors){
-    }
-    res.redirect(`${BASE}/${STORE}/${req.body.ssName}`);  
+    let errors ={}
+    let error = validateField('ssName',{ssName:req.body.ssName},errors);
+    if(error){
+      res.redirect(`${BASE}/${STORE}/${req.body.ssName}`);
+    }else{
+      const model = {errors : [{msg: errors['ssName']}]}
+      res.send(app.locals.mustache.render('index', model));
+    }    
+  };
+}
 
-    //res.status(OK).
-    //send(app.locals.mustache.render('next' , {}));
-
+function doRead(app) {
+  return async function (req, res) {
+      
+      res.status(OK).
+      send(app.locals.mustache.render('next' , {ssName:req.params.SS_NAME}));
 
     
   };
 }
-
 
 /** Default handler for when there is no route for a particular method
  *  and path.
