@@ -23,6 +23,10 @@ const SERVER_ERROR = 500;
 
 const __dirname = Path.dirname(new URL(import.meta.url).pathname);
 
+const BASE = "api";
+const STORE = "store";
+
+
 export default function serve(port, store) {
   process.chdir(__dirname);
   const app = express();
@@ -43,6 +47,9 @@ function setupRoutes(app) {
   app.use(bodyParser.urlencoded({extended: true}));
   
   //@TODO add routes
+  app.use(bodyParser.json());
+  app.get(`/`, doGet(app));
+  app.post(`/`,bodyParser.urlencoded({extended: false}), doPost(app));
   //must be last
   app.use(do404(app));
   app.use(doErrors(app));
@@ -50,6 +57,35 @@ function setupRoutes(app) {
 }
 
 //@TODO add handlers
+
+function doGet(app) {
+  return async function (req, res) {
+      
+      res.status(OK).
+      send(app.locals.mustache.render('index' , {}));
+
+    
+  };
+}
+
+
+function doPost(app) {
+  return async function (req, res) {
+      
+  
+    let errors = validateField('ssName',req.body.ssName,{});
+    if(!errors){
+    }
+    res.redirect(`${BASE}/${STORE}/${req.body.ssName}`);  
+
+    //res.status(OK).
+    //send(app.locals.mustache.render('next' , {}));
+
+
+    
+  };
+}
+
 
 /** Default handler for when there is no route for a particular method
  *  and path.
@@ -74,6 +110,8 @@ function doErrors(app) {
     console.error(err);
   };
 }
+
+
 
 /************************* SS View Generation **************************/
 
