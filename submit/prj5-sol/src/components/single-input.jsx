@@ -18,13 +18,44 @@ export default class SingleInput extends React.Component {
   constructor(props) {
     super(props);
     //@TODO
+    this.onSubmit = this.onSubmit.bind(this);
+    this.onChange = this.onChange.bind(this);
+    this.state = {
+      value: '',
+      error: '',
+    };
   }
 
   //@TODO
+  async onSubmit(event){
+    try{
+    event.preventDefault();
+    await this.props.update(this.state.value);
+    }
+    catch(err){
+      this.setState({error: err.message});
+    }
+
+  }
+
+  onChange(event){
+    const target = event.target;
+    const val = target.value;
+    this.setState({
+      value : val
+    });
+  }
 
   render() {
     //@TODO
-    return '';
+    return (
+      <form onSubmit = {this.onSubmit}>
+        <label className= {this.props.id}>{this.props.label} </label>
+        <input type = "text" id = {this.props.id} value = {this.state.value} onChange = {this.onChange} onBlur = {this.onSubmit}></input>
+        <br/>
+        <span className = "error"> {this.state.error}</span>
+        </form>
+    );
   }
 
 }

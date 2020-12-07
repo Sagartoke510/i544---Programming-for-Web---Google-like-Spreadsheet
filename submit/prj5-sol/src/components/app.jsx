@@ -33,6 +33,14 @@ export default class App extends React.Component {
 
   async update(ssName) {
     //@TODO
+    let reg = /^[\w\- ]+$/;
+
+    if(!ssName.match(reg)){
+      throw new Error("Spreadsheet name must contain one-or-more alphanumerics, hyphen or space characters.");
+    }
+
+    this.setState({spreadsheet: await Spreadsheet.make(ssName.trim(), this.props.ssClient)});
+
   }
 
 
